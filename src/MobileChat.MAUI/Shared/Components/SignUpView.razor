@@ -3,12 +3,11 @@
 @using FluentValidation
 @using System.Text.RegularExpressions
 @using MobileChat.MAUI.Interfaces;
-@using MobileChat.MAUI.Services
+@using MobileChat.MAUI.Models
 @using MobileChat.Shared.Interfaces
 @using MobileChat.Shared.Models
 @inject ISaveFile SaveFileService
-@inject IChatAuth ChatAuthService
-@inject IChatUser ChatUserService
+@inject IChatHub ChatService
 @inject SessionStorage SessionStorage
 @inject NavigationManager NavigationManager
 
@@ -75,7 +74,7 @@
 
     protected override void OnInitialized()
     {
-        UserValidator = new UserFluentValidator(ChatUserService);
+        UserValidator = new UserFluentValidator(ChatService);
 
         base.OnInitialized();
     }
@@ -93,7 +92,7 @@
             return;
         }
 
-        KeyValuePair<Guid, bool> values = await ChatAuthService.SignUp(model.DisplayName, model.Username, model.Email, model.Password);
+        KeyValuePair<Guid, bool> values = await ChatService.SignUp(model.DisplayName, model.Username, model.Email, model.Password);
 
         //create user
         if (values.Value)
@@ -143,10 +142,10 @@
 
     public class UserFluentValidator : AbstractValidator<User>
     {
-        private readonly IChatUser ChatUserService;
-        public UserFluentValidator(IChatUser ChatUserService)
+        private readonly IChatHub ChatService;
+        public UserFluentValidator(IChatHub ChatService)
         {
-            this.ChatUserService = ChatUserService;
+            this.ChatService = ChatService;
 
             RuleFor(x => x.DisplayName)
                 .NotEmpty()

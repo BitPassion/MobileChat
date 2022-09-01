@@ -1,13 +1,13 @@
 ﻿@page "/friends"
 
 @using MobileChat.MAUI.Interfaces
-@using MobileChat.MAUI.Services
+@using MobileChat.MAUI.Models
 @using MobileChat.MAUI.Shared.Components
 @using MobileChat.Shared.Interfaces
 @using MobileChat.Shared.Models
 @inject NavigationManager NavigationManager
 @inject ISaveFile SaveFileService
-@inject IChatUser ChatUserService
+@inject IChatHub ChatService
 @inject SessionStorage SessionStorage
 @inject ISnackbar Snackbar
 
@@ -97,15 +97,24 @@ else
         {
             if (SessionStorage.User is not null)
             {
-                IsSignedIn = true;
-                await RefetchData();
+                IsBusy = true;
+
+                KeyValuePair<Guid, bool> values = await ChatService.SignIn(SessionStorage.User.Username, SessionStorage.User.Password);
+                IsSignedIn = values.Value;
+
+                if (IsSignedIn)
+                {
+                    SessionStorage.User = SessionStorage.User;
+                    await RefetchData();
+                }
+
+                IsBusy = false;
             }
             else
             {
                 IsSignedIn = false;
+                IsBusy = false;
             }
-
-            IsBusy = false;
 
             await InvokeAsync(StateHasChanged);
         }
@@ -133,7 +142,7 @@ else
 
     private async Task<User[]> GetFriends()
     {
-        UserFriend[] users = await ChatUserService.GetUserFriends(SessionStorage.User.Id);
+        UserFriend[] users = await ChatService.GetUserFriends(SessionStorage.User.Id);
         User[] friends = new User[users.Length];
 
         for (int i = 0; i < users.Length; i++)
@@ -142,16 +151,16 @@ else
             {
                 User user = new User();
                 user.Id = users[i].UserId;
-                user.DisplayName = await ChatUserService.GetUserDisplayName(users[i].UserId);
-                user.Username = await ChatUserService.GetUserUsername(users[i].UserId);
+                user.DisplayName = await ChatService.GetUserDisplayName(users[i].UserId);
+                user.Username = await ChatService.GetUserUsername(users[i].UserId);
                 friends[i] = user;
             }
             else
             {
                 User user = new User();
                 user.Id = users[i].FriendUserId;
-                user.DisplayName = await ChatUserService.GetUserDisplayName(users[i].FriendUserId);
-                user.Username = await ChatUserService.GetUserUsername(users[i].FriendUserId);
+                user.DisplayName = await ChatService.GetUserDisplayName(users[i].FriendUserId);
+                user.Username = await ChatService.GetUserUsername(users[i].FriendUserId);
                 friends[i] = user;
             }
         }
@@ -161,15 +170,15 @@ else
 
     private async Task<User[]> GetFriendsRequest()
     {
-        UserFriend[] users = await ChatUserService.GetUserFriendRequests(SessionStorage.User.Id);
+        UserFriend[] users = await ChatService.GetUserFriendRequests(SessionStorage.User.Id);
         User[] friendRequests = new User[users.Length];
 
         for (int i = 0; i < users.Length; i++)
         {
             User user = new User();
             user.Id = users[i].UserId;
-            user.DisplayName = await ChatUserService.GetUserDisplayName(users[i].UserId);
-            user.Username = await ChatUserService.GetUserUsername(users[i].UserId);
+            user.DisplayName = await ChatService.GetUserDisplayName(users[i].UserId);
+            user.Username = await ChatService.GetUserUsername(users[i].UserId);
             friendRequests[i] = user;
         }
 
@@ -183,7 +192,7 @@ else
             return;
         }
 
-        if (await ChatUserService.AddFriend(SessionStorage.User.Id, usernameToAdd))
+        if (await ChatService.AddFriend(SessionStorage.User.Id, usernameToAdd))
         {
             Snackbar.Add($"Friend request sent!", Severity.Success);
 
@@ -200,7 +209,7 @@ else
 
     private async Task RemoveFriend(string friendusername)
     {
-        if (await ChatUserService.RemoveFriend(SessionStorage.User.Id, friendusername))
+        if (await ChatService.RemoveFriend(SessionStorage.User.Id, friendusername))
         {
             Snackbar.Add($"Removed {friendusername} from friends", Severity.Success);
 
@@ -214,7 +223,7 @@ else
 
     private async Task AcceptFriendRequest(Guid friendid)
     {
-        if(await ChatUserService.AcceptFriend(SessionStorage.User.Id, friendid))
+        if(await ChatService.AcceptFriend(SessionStorage.User.Id, friendid))
         {
             await RefetchData();
         }
@@ -226,7 +235,7 @@ else
 
     private async Task DenyFriendRequest(Guid friendid)
     {
-        if (await ChatUserService.DenyFriend(SessionStorage.User.Id, friendid))
+        if(await ChatService.DenyFriend(SessionStorage.User.Id, friendid))
         {
             await RefetchData();
         }

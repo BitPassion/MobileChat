@@ -1,6 +1,6 @@
 ﻿using MobileChat.Shared.Models;
 
-namespace MobileChat.MAUI.Services
+namespace MobileChat.MAUI.Models
 {
     public class SessionStorage
     {
