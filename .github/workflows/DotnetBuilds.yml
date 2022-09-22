@@ -2,13 +2,13 @@ name: Dotnet builds
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "development-maui" ]
     paths-ignore:
       - '**/*.md'
       - '**/*.gitignore'
       - '**/*.gitattributes'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "development-maui" ]
   workflow_dispatch:
 
 permissions:

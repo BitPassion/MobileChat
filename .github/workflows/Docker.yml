@@ -2,9 +2,9 @@ name: Docker
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "development-maui" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "development-maui" ]
 
   workflow_dispatch:
 
